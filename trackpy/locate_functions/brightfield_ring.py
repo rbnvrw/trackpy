@@ -122,7 +122,10 @@ def locate_brightfield_ring(raw_image, diameter, separation=None,
     refined = {}
     for i, coords in coords_df.iterrows():
         if refine_func == 'holopy':
-            positions = coords[['y', 'x', 'z']]
+            if 'z' in coords:
+                positions = coords[['y', 'x', 'z']]
+            else:
+                positions = coords[['y', 'x']]
         else:
             positions = coords[pos_columns]
 
