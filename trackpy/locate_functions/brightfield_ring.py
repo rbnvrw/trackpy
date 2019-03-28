@@ -9,14 +9,14 @@ import numpy as np
 from pandas import (DataFrame, concat)
 
 from ..find import (grey_dilation, where_close)
-from ..refine import (refine_brightfield_ring,)
+from ..refine import (refine_brightfield_ring, refine_holopy)
 from ..utils import (validate_tuple, default_pos_columns)
 from ..preprocessing import convert_to_int
 from ..feature import locate
 
 
 def locate_brightfield_ring(raw_image, diameter, separation=None,
-                            previous_coords=None, **kwargs):
+                            previous_coords=None, refine_func='ring', **kwargs):
     """Locate particles imaged in brightfield mode of some approximate size in
     an image.
 
@@ -67,6 +67,9 @@ def locate_brightfield_ring(raw_image, diameter, separation=None,
            Matter, 2019, 15, 1345-1360, http://dx.doi.org/10.1039/C8SM01661E
 
     """
+
+    print('Using method "%s"' % refine_func)
+
     # Validate parameters and set defaults.
     raw_image = np.squeeze(raw_image)
     shape = raw_image.shape
@@ -118,9 +121,17 @@ def locate_brightfield_ring(raw_image, diameter, separation=None,
 
     refined = {}
     for i, coords in coords_df.iterrows():
-        positions = coords[pos_columns]
-        result = refine_brightfield_ring(image, radius, positions,
-                                         pos_columns=pos_columns, **kwargs)
+        if refine_func == 'holopy':
+            positions = coords[['y', 'x', 'z']]
+        else:
+            positions = coords[pos_columns]
+
+        if refine_func == 'holopy':
+            result = refine_holopy(image, radius, positions,
+                                   pos_columns=pos_columns, **kwargs)
+        else:
+            result = refine_brightfield_ring(image, radius, positions,
+                                             pos_columns=pos_columns, **kwargs)
         if result is None:
             if has_user_input:
                 warnings.warn(("Lost particle {:d} (x={:.0f}, y={:.0f})" +
